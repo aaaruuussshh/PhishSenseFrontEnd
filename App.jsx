@@ -292,13 +292,11 @@ function CursorAndAurora() {
     const tick = () => {
       const { x, y } = mouseRef.current
 
-      // dot follows exactly
       if (dotRef.current) {
         dotRef.current.style.left = x + 'px'
         dotRef.current.style.top  = y + 'px'
       }
 
-      // ring lags behind
       ringPosRef.current.x = lerp(ringPosRef.current.x, x, 0.14)
       ringPosRef.current.y = lerp(ringPosRef.current.y, y, 0.14)
       if (ringRef.current) {
@@ -306,13 +304,11 @@ function CursorAndAurora() {
         ringRef.current.style.top  = ringPosRef.current.y + 'px'
       }
 
-      // spotlight
       if (spotRef.current) {
         spotRef.current.style.left = x + 'px'
         spotRef.current.style.top  = y + 'px'
       }
 
-      // blobs drift gently with cursor
       const cx = x / window.innerWidth  - 0.5
       const cy = y / window.innerHeight - 0.5
       if (blob1Ref.current) blob1Ref.current.style.transform = `translate(${cx*30}px, ${cy*20}px)`
@@ -446,7 +442,6 @@ function IdleScreen({ url, setUrl, onAnalyze, onDemo }) {
       }}>
         <div className="fade-up" style={{ width:'100%', maxWidth:'440px', textAlign:'center' }}>
 
-          {/* Hero shield */}
           <div className="float" style={{ marginBottom:'28px', display:'inline-block' }}>
             <div style={{
               width:72, height:72, borderRadius:'20px', margin:'0 auto',
@@ -575,6 +570,7 @@ function ResultsScreen({ data, onReset, isDemo }) {
   const domainAge = heuristic.domainAge
   const score     = typeof totalRiskScore === 'number' ? Math.round(totalRiskScore) : null
   const isSafe    = verdict === 'LIKELY SAFE'
+  const isAiUnavailable = verdict === 'AI_UNAVAILABLE'
   const verdictColor = isSafe ? C.deepBrown : C.amber
 
   const reasoning = gemini.reasoning || gemini.summary || gemini.explanation
@@ -598,6 +594,71 @@ function ResultsScreen({ data, onReset, isDemo }) {
   const SectionLabel = ({ children }) => (
     <div className="section-label">{children}</div>
   )
+
+  /* ── AI UNAVAILABLE SCREEN ─────────────────────────────────────────────── */
+  if (isAiUnavailable) {
+    return (
+      <>
+        <Topbar onReset={onReset} showBack />
+        <div style={{
+          minHeight:'calc(100vh - 52px)',
+          display:'flex', flexDirection:'column',
+          alignItems:'center', justifyContent:'center',
+          padding:'48px 24px', position:'relative', zIndex:2,
+        }}>
+          <div className="fade-up" style={{ width:'100%', maxWidth:'480px' }}>
+            <TiltCard className="glass-strong" style={{
+              padding:'36px 32px',
+              borderLeft:`3px solid rgba(192,88,0,0.5)`,
+              borderRadius:'12px',
+              textAlign:'center',
+            }}>
+              {/* Icon */}
+              <div style={{
+                width:56, height:56, borderRadius:'16px', margin:'0 auto 24px',
+                background:'rgba(192,88,0,0.12)',
+                border:'1px solid rgba(192,88,0,0.25)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                  stroke={C.amber} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+
+              <div style={{
+                fontSize:'11px', letterSpacing:'0.18em', textTransform:'uppercase',
+                color:'rgba(192,88,0,0.7)', fontFamily:FONT, fontWeight:700,
+                marginBottom:'14px',
+              }}>
+                AI Analysis Unavailable
+              </div>
+
+              <p style={{ fontSize:'15px', color:'rgba(253,251,212,0.7)',
+                fontFamily:FONT, lineHeight:1.7, marginBottom:'10px' }}>
+                Our AI security engine is currently unavailable due to high demand.
+              </p>
+              <p style={{ fontSize:'14px', color:'rgba(253,251,212,0.45)',
+                fontFamily:FONT, lineHeight:1.7, marginBottom:'10px' }}>
+                No final safety verdict could be generated.
+              </p>
+              <p style={{ fontSize:'14px', color:'rgba(253,251,212,0.45)',
+                fontFamily:FONT, lineHeight:1.7, marginBottom:'32px' }}>
+                Please try again in a few minutes.
+              </p>
+
+              <button className="btn-primary" onClick={onReset}
+                style={{ fontSize:'14px' }}>
+                ← Try again
+              </button>
+            </TiltCard>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -644,7 +705,6 @@ function ResultsScreen({ data, onReset, isDemo }) {
                   {reasoning}
                 </p>
               )}
-              
             </div>
             <ScoreRing score={score} color={verdictColor} />
           </TiltCard>
@@ -695,50 +755,49 @@ function ResultsScreen({ data, onReset, isDemo }) {
                 </div>
               )}
               {screenshotBase64 ? (
-  <div style={{ maxHeight:'500px', overflowY:'auto',
-    scrollbarWidth:'thin',
-    scrollbarColor:'rgba(192,88,0,0.3) transparent' }}>
-    <img src={`data:image/png;base64,${screenshotBase64}`}
-      alt="Screenshot" style={{ width:'100%', display:'block' }}/>
-  </div>
+                <div style={{ maxHeight:'500px', overflowY:'auto',
+                  scrollbarWidth:'thin',
+                  scrollbarColor:'rgba(192,88,0,0.3) transparent' }}>
+                  <img src={`data:image/png;base64,${screenshotBase64}`}
+                    alt="Screenshot" style={{ width:'100%', display:'block' }}/>
+                </div>
               ) : (
-  <div style={{ padding:'32px 24px' }}>
-    <div style={{ fontFamily:MONO, lineHeight:2.2, marginBottom:'20px', textAlign:'center' }}>
-      <div style={{ fontSize:'10px', letterSpacing:'0.08em',
-        textTransform:'uppercase', color:'rgba(253,251,212,0.2)',
-        marginBottom:'8px' }}>
-        {isDemo ? 'Screenshot appears with live backend' : 'Screenshot unavailable'}
-      </div>
-      <div style={{ fontSize:'12px', color:'rgba(253,251,212,0.15)' }}>
-        $ sandbox --headless {finalUrl.slice(0,42)}...
-      </div>
-    </div>
+                <div style={{ padding:'32px 24px' }}>
+                  <div style={{ fontFamily:MONO, lineHeight:2.2, marginBottom:'20px', textAlign:'center' }}>
+                    <div style={{ fontSize:'10px', letterSpacing:'0.08em',
+                      textTransform:'uppercase', color:'rgba(253,251,212,0.2)',
+                      marginBottom:'8px' }}>
+                      {isDemo ? 'Screenshot appears with live backend' : 'Screenshot unavailable'}
+                    </div>
+                    <div style={{ fontSize:'12px', color:'rgba(253,251,212,0.15)' }}>
+                      $ sandbox --headless {finalUrl.slice(0,42)}...
+                    </div>
+                  </div>
 
-    {/* Placard */}
-    {!isDemo && (
-      <div style={{
-        border:'1px solid rgba(192,88,0,0.25)',
-        borderLeft:'3px solid rgba(192,88,0,0.6)',
-        borderRadius:'8px',
-        padding:'16px 18px',
-        background:'rgba(192,88,0,0.06)',
-      }}>
-        <div style={{ fontSize:'11px', letterSpacing:'0.1em',
-          textTransform:'uppercase', color:'rgba(192,88,0,0.7)',
-          fontFamily:'FONT', marginBottom:'10px', fontWeight:700 }}>
-          ⚠ Why no screenshot?
-        </div>
-        <div style={{ fontSize:'13px', color:'rgba(253,251,212,0.5)',
-          fontFamily:FONT, lineHeight:1.7 }}>
-          This site actively blocked our sandbox browser. Legitimate websites
-          generally do not block automated security analysis tools.
-          <span style={{ color:'rgba(192,88,0,0.8)', fontWeight:600 }}> Blocking sandbox access is itself a suspicious behavior</span> commonly
-          used by phishing and scam sites to avoid detection.
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                  {!isDemo && (
+                    <div style={{
+                      border:'1px solid rgba(192,88,0,0.25)',
+                      borderLeft:'3px solid rgba(192,88,0,0.6)',
+                      borderRadius:'8px',
+                      padding:'16px 18px',
+                      background:'rgba(192,88,0,0.06)',
+                    }}>
+                      <div style={{ fontSize:'11px', letterSpacing:'0.1em',
+                        textTransform:'uppercase', color:'rgba(192,88,0,0.7)',
+                        fontFamily:FONT, marginBottom:'10px', fontWeight:700 }}>
+                        ⚠ Why no screenshot?
+                      </div>
+                      <div style={{ fontSize:'13px', color:'rgba(253,251,212,0.5)',
+                        fontFamily:FONT, lineHeight:1.7 }}>
+                        This site actively blocked our sandbox browser. Legitimate websites
+                        generally do not block automated security analysis tools.
+                        <span style={{ color:'rgba(192,88,0,0.8)', fontWeight:600 }}> Blocking sandbox access is itself a suspicious behavior</span> commonly
+                        used by phishing and scam sites to avoid detection.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <p style={{ fontSize:'11px', color:'rgba(253,251,212,0.25)',
               marginTop:'8px', fontFamily:FONT }}>
@@ -965,47 +1024,47 @@ export default function App() {
     startTimer(() => { setLoadingStep(STEPS.length); setData(MOCK_DATA); setAppState('results') })
   }
 
-const handleAnalyze = async () => {
-  const trimmed = url.trim();
-  if (!trimmed) return;
+  const handleAnalyze = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
 
-  setIsDemo(false);
-  setAppState('loading');
-  setLoadingStep(0);
-  setData(null);
-  startTimer(null);
+    setIsDemo(false);
+    setAppState('loading');
+    setLoadingStep(0);
+    setData(null);
+    startTimer(null);
 
-  try {
-    const res = await fetch(
-      'https://phishsense1.onrender.com/analyze',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'hello_my_name_aarush'
-        },
-        body: JSON.stringify({
-          url: trimmed,
-          preliminary_report: {}
-        }),
-        signal: AbortSignal.timeout(60000),
-      }
-    );
+    try {
+      const res = await fetch(
+        'https://phishsense1.onrender.com/analyze',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'hello_my_name_aarush'
+          },
+          body: JSON.stringify({
+            url: trimmed,
+            preliminary_report: {}
+          }),
+          signal: AbortSignal.timeout(60000),
+        }
+      );
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const json = await res.json();
+      const json = await res.json();
 
-    clearInterval(timerRef.current);
-    setLoadingStep(STEPS.length);
-    setData(json);
-    setAppState('results');
-  } catch (err) {
-    console.error(err);
-    clearInterval(timerRef.current);
-    setAppState('error');
-  }
-};
+      clearInterval(timerRef.current);
+      setLoadingStep(STEPS.length);
+      setData(json);
+      setAppState('results');
+    } catch (err) {
+      console.error(err);
+      clearInterval(timerRef.current);
+      setAppState('error');
+    }
+  };
 
   const handleReset = () => {
     clearInterval(timerRef.current)
