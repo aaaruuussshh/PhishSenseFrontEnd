@@ -1024,10 +1024,12 @@ export default function App() {
     startTimer(() => { setLoadingStep(STEPS.length); setData(MOCK_DATA); setAppState('results') })
   }
 
-  const handleAnalyze = async () => {
-    const trimmed = url.trim();
+const handleAnalyze = async () => {
+    let trimmed = url.trim();
     if (!trimmed) return;
-
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      trimmed = 'https://' + trimmed;
+    }
     setIsDemo(false);
     setAppState('loading');
     setLoadingStep(0);
